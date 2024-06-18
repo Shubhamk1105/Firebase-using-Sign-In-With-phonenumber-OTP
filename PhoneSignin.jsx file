@@ -1,0 +1,189 @@
+// this is Code file like(PhoneSignin.jsx)
+
+
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
+import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";  // This file adding in next text
+import { toast, Toaster } from "react-hot-toast";
+import { auth } from "../firebase.config";
+import OtpInput from "otp-input-react";
+import { CgSpinner } from "react-icons/cg";
+import { BsFillShieldLockFill } from "react-icons/bs";
+import Logo from "././assets/Logo.jpg"; // Adding Your img and also img path
+import { useSelector } from 'react-redux';
+import { Link } from "react-router-dom";
+
+const PhoneSignin = ({ setAuthenticated, setUserData }) => {
+  const [otp, setOtp] = useState("");
+  const [ph, setPh] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showOTP, setShowOTP] = useState(false);
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+  const state = useSelector((state) => state.handleCart); // Get cart state
+
+  // Function to verify CAPTCHA
+  function onCaptchVerify() {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(
+        "recaptcha-container",
+        {
+          size: "invisible",
+          callback: (response) => {
+            onSignup();
+          },
+          "expired-callback": () => {},
+        },
+        auth
+      );
+    }
+  }
+
+  // Function to sign up with phone number
+  function onSignup() {
+    setLoading(true);
+    onCaptchVerify();
+
+    const appVerifier = window.recaptchaVerifier;
+
+    const formatPh = "+" + ph;
+
+    signInWithPhoneNumber(auth, formatPh, appVerifier)
+      .then((confirmationResult) => {
+        window.confirmationResult = confirmationResult;
+        setLoading(false);
+        setShowOTP(true);
+        toast.success("OTP sent successfully!");
+      })
+      .catch((error) => {
+        console.log(error);
+        setLoading(false);
+      });
+  }
+
+  // Function to verify OTP
+  function onOTPVerify() {
+    setLoading(true);
+    window.confirmationResult
+      .confirm(otp)
+      .then(async (res) => {
+        setUser(res.user);
+        setAuthenticated(true); // Authenticate user
+        setLoading(false);
+        // Store token in localStorage upon successful login
+        const token = "exampleToken"; // Replace this with your actual token
+        localStorage.setItem("token", token);
+        console.log("Token:::::::::", token);
+      })
+      .catch((err) => {
+        console.log(err);
+        setLoading(false);
+      });
+  }
+
+  // Function to handle OTP input change
+  const handleOTPChange = (otp) => {
+    setOtp(otp);
+  };
+
+  useEffect(() => {
+    // Check if token exists in localStorage on page load
+    const token = localStorage.getItem("token");
+    if (token) {
+      // Set timer to clear token after 10 seconds
+      const expirationTimer = setTimeout(() => {
+        localStorage.removeItem("token");
+        setAuthenticated(false);
+        setUser(null);
+      }, 10000);
+      return () => clearTimeout(expirationTimer);
+    }
+  }, [setAuthenticated]);
+
+  return (
+    <div className="min-h-screen flex justify-center items-center">
+      <div className="pt-20 w-full max-w-md">
+        <Toaster toastOptions={{ duration: 4000 }} />
+        <div id="recaptcha-container"></div>
+        {user ? (
+          <h2 className="text-center text-gray-900 font-medium text-2xl">
+            👍 Login Success
+          </h2>
+        ) : (
+          <div className="w-full flex flex-col gap-4 rounded-lg p-4 bg-white shadow-lg">
+            {showOTP ? (
+              <>
+                <div className="bg-green-500 text-white w-fit mx-auto p-4 rounded-full">
+                  <BsFillShieldLockFill size={30} />
+                </div>
+                <label
+                  htmlFor="otp"
+                  className="font-bold text-xl text-green-500 text-center"
+                >
+                  Enter your OTP
+                </label>
+                <OtpInput
+                  value={otp}
+                  onChange={handleOTPChange}
+                  OTPLength={6}
+                  otpType="number"
+                  disabled={false}
+                  autoFocus
+                  className="opt-container"
+                />
+                <button
+                  onClick={onOTPVerify}
+                  className="bg-green-600 w-full flex gap-1 items-center justify-center py-2.5 text-white rounded hover:bg-green-700 transition duration-300 ease-in-out"
+                >
+                  {loading && (
+                    <CgSpinner size={20} className="mt-1 animate-spin" />
+                  )}
+                  <span>Verify OTP</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="flex justify-between items-center">
+                  <h1 className="text-left leading-normal text-green-500 font-medium text-3xl mb-6">
+                    <span>Login to</span> <br />
+                    Wheatpantry
+                    <br />
+                  </h1>
+                  <div className="flex justify-between items-center">
+                    <img src={Logo} alt="Logo" style={{ width: '80px', height: 'auto' }} />
+                  </div>
+                </div>
+                <label
+                  htmlFor=""
+                  className="font-bold text-xl text-green-500 text-center"
+                >
+                  {/* Verify your phone number */}
+                </label>
+                <PhoneInput country={"in"} value={ph} onChange={setPh} />
+                <button
+                  onClick={onSignup}
+                  className="bg-green-600 w-full flex gap-1 items-center justify-center py-2.5 text-white rounded hover:bg-green-700 transition duration-300 ease-in-out"
+                  style={{ backgroundColor: "rgb(148,103,0)" }}
+                >
+                  {loading && (
+                    <CgSpinner size={20} className="mt-1 animate-spin" />
+                  )}
+                  <span>Send code via SMS</span>
+                </button>
+                <div className="text-center text-green-500 mt-2">
+                  <span>or </span>
+                  <Link to="/Register" className="text-green-500 font-semibold hover:underline">create an account</Link>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default PhoneSignin;
