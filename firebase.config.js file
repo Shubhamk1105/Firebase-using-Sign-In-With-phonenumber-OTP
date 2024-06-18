@@ -1,0 +1,26 @@
+file name => firebase.config.js 
+
+
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "--------------------------", // Adding your Api key
+  authDomain: "---------------------",  //Addin Your authDomain
+  projectId: "wheatpantry-login",
+  storageBucket: "wheatpantry-login.appspot.com",
+  messagingSenderId: "249428293515",
+  appId: "1:249428293515:web:31d060b6da1a9efa9d618e",
+  measurementId: "G-FQZKL5NMXK"
+};
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+export const auth = getAuth(app);
+
+
